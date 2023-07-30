@@ -1,0 +1,12 @@
+.clienttable {
+    display: block;
+    width: 100%;
+}
+
+.clienttable tr {
+    width: 100%;
+}
+
+.clienttable tr:nth-child(even) {
+    background-color: #D5F3FE;
+}
