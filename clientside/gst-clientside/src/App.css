@@ -1,0 +1,18 @@
+.clientnavbar {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    width: 90%;
+    margin-left: 20px;
+}
+
+
+
+.clientnavbar button {
+    color: white;
+    background-color: #3b71ca;
+    height: 30px;
+    cursor: pointer;
+    margin-left: 20px;
+}
