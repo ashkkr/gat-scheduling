@@ -1,13 +1,36 @@
+import { createContext, useContext, useEffect, useState } from 'react';
+import { RecoilRoot, atom, selector, useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
 import './index.css';
 
+function fetchClientDetails() {
+    const setClientList = useSetRecoilState(clientListState);
+    const setCurrClient = useSetRecoilState(currentClient);
+
+    useEffect(() => {
+        fetch("http://localhost:3000/clientlist").then((res) => {
+            res.json().then((data) => {
+                setClientList(data);
+                setCurrClient(data[0]);
+            })
+        })
+    }, []);
+}
+
+function handleChange(e, currClientVal, setFunc) {
+    setFunc({ ...currClientVal, [e.target.name]: e.target.value });
+}
+
 function HomePage() {
-    return <div class="clientspace">
-        <ClientList></ClientList>
-        <ClientDetails></ClientDetails>
-    </div>
+    return <RecoilRoot>
+        <div class="clientspace">
+            <ClientList></ClientList>
+            <ClientDetails></ClientDetails>
+        </div>
+    </RecoilRoot>
 }
 
 function ClientDetails() {
+    fetchClientDetails();
     return <div class="clientdetails">
         <ClientEditables></ClientEditables>
         <GSTDetails></GSTDetails>
@@ -17,28 +40,99 @@ function ClientDetails() {
 }
 
 export function ClientEditables() {
+    const currentClientstate = useRecoilValue(currentClient);
+
+    function updateClient() {
+        fetch('http://localhost:3000/clientdetails/' + currentClientstate.gstNumber, {
+            method: 'PUT',
+            body: JSON.stringify(currentClientstate),
+            headers: {
+                "Content-Type": "application/json"
+            }
+        }).then((res) => {
+            res.json().then((data) => {
+                console.log(data);
+            })
+        })
+            .catch((err) => {
+                console.error(err);
+            })
+    }
+
     return <div class="editabledetails">
-        <label for="clientactive">Active</label>
-        <input id="clientactive" type="checkbox"></input>
+        <IsClientActive></IsClientActive>
         <ClientBasicDetails></ClientBasicDetails>
         <GSTNumber></GSTNumber>
         <GSTPortalDetails></GSTPortalDetails>
-        <button class="savebasicdetails" type="submit">Save</button>
+        <button class="savebasicdetails" onClick={() => updateClient()} type="submit">Save</button>
     </div>
+}
+
+function IsClientActive() {
+    const listOfClients = useRecoilValue(clientListState);
+    const indexOfClient = useRecoilValue(selectedClientindexState);
+    const [currClientVal, setCurrentClient] = useRecoilState(currentClient);
+
+    try {
+        const clientactive = listOfClients[indexOfClient].isActive;
+        function inactivateClient() {
+            setCurrentClient((old) => {
+                let __new = { ...old };
+                __new.isActive = false;
+                console.log(__new);
+                return __new;
+            });
+        }
+        function activateClient() {
+            setCurrentClient((old) => {
+                let __new = { ...old };
+                __new.isActive = true;
+                console.log(__new);
+                return __new;
+            });
+        }
+
+        if (currClientVal.isActive) {
+            return <>
+                <label for="clientactive">Active</label>
+                <input id="clientactive" onChange={() => inactivateClient()} type="checkbox" checked></input>
+            </>
+        }
+        else {
+            return <>
+                <label for="clientactive">Active</label>
+                <input id="clientactive" onChange={() => activateClient()} type="checkbox"></input >
+            </>
+        }
+    }
+    catch (err) {
+        return null;
+    }
 }
 
 function GSTNumber() {
-    return <div class="gstnumber">
-        <text>GST Number: </text>
-        <input type="text"></input>
-    </div>
+    const listOfClients = useRecoilValue(clientListState);
+    const indexOfClient = useRecoilValue(selectedClientindexState);
+    try {
+        const gstvalue = listOfClients[indexOfClient].gstNumber;
+        if (gstvalue == undefined || gstvalue == null) return null;
+        else return <div class="gstnumber">
+            <text>GST Number: </text>
+            <input type="text" value={gstvalue}></input>
+        </div>
+    }
+    catch (err) {
+        return null;
+    }
 }
 
 function ClientEmailReceived() {
+    const clientdoc = useRecoilValue(clientdocdetails);
+
     return <div class="clientemailreceived">
         <div>
             <text>Latest Documents Received on: </text>
-            <text>26 July, 2023</text>
+            <text>{clientdoc.lastdocdate}</text>
         </div>
         <div>
             <a href="/">Open Documents Folder</a>
@@ -47,25 +141,36 @@ function ClientEmailReceived() {
 }
 
 function EmailSendDetails() {
+    const emaildetails = useRecoilValue(clientemaildetails);
+
     return <div class="emailsenddetails">
         <div>
             <text>Last Reminder Email Sent on: </text>
-            <text>26 July, 2023</text>
+            <text>{emaildetails.lastEmail}</text>
         </div>
         <div>
             <text>Next Reminder Email to be sent on: </text>
-            <input type="date"></input>
+            <text>{emaildetails.nextEmail}</text>
         </div>
     </div>
 }
 
 function GSTPortalDetails() {
-    return <div class="gstportaldetails">
-        <text>GST Portal Username</text>
-        <input type="text"></input>
-        <text>GST Portal Password</text>
-        <input type="password"></input>
-    </div>
+    const [currclientval, setCurrClient] = useRecoilState(currentClient);
+
+    try {
+        const gstusername = currclientval.gstUsername;
+        const gstpassword = currclientval.gstPassword;
+        return <div class="gstportaldetails">
+            <text>GST Portal Username</text>
+            <input name="gstUsername" type="text" value={gstusername} onChange={(e) => handleChange(e, currclientval, setCurrClient)}></input>
+            <text>GST Portal Password</text>
+            <input name="gstPassword" type="password" value={gstpassword} onChange={(e) => handleChange(e, currclientval, setCurrClient)}></input>
+        </div>
+    }
+    catch (error) {
+        return null;
+    }
 }
 
 function GSTDetails() {
@@ -77,39 +182,125 @@ function GSTDetails() {
 }
 
 function ClientBasicDetails() {
-    return <div class="basicdetails">
-        <div>
-            <text>Client Name:</text>
-            <input type="text"></input>
+    const [currClientVal, setCurrClient] = useRecoilState(currentClient);
+
+    try {
+        const clientname = currClientVal.clientName;
+        const clientemail = currClientVal.clientEmail;
+        const clientnumber = currClientVal.clientNumber;
+
+        // function handleChange(e) {
+        //     setCurrClient({ ...currClientVal, [e.target.name]: e.target.value });
+        // }
+
+        return <div class="basicdetails">
+            <div>
+                <text>Client Name:</text>
+                <input name="clientName" type="text" value={clientname} onChange={(e) => handleChange(e, currClientVal, setCurrClient)}></input>
+            </div>
+            <div>
+                <text>Client Email:</text>
+                <input name="clientEmail" type="text" value={clientemail} onChange={(e) => handleChange(e, currClientVal, setCurrClient)}></input>
+            </div>
+            <div>
+                <text>Client Contact Number:</text>
+                <input name="clientNumber" type="text" value={clientnumber} onChange={(e) => handleChange(e, currClientVal, setCurrClient)}></input>
+            </div>
         </div>
-        <div>
-            <text>Client Email:</text>
-            <input type="text"></input>
-        </div>
-        <div>
-            <text>Client Contact Number:</text>
-            <input type="text"></input>
-        </div>
-    </div>
+    }
+    catch (err) {
+        return null;
+    }
 }
 
 export function ClientList() {
+    const listOfClients = useRecoilValue(clientListState);
+
+    if (listOfClients == undefined || listOfClients.length == 0) {
+        return <div class="clientlist">
+            <input class="clientsearch" type="text" placeholder='Search for Client'></input>
+            <hr class="classlistseparator"></hr>
+        </div>
+    }
+
     return <div class="clientlist">
         <input class="clientsearch" type="text" placeholder='Search for Client'></input>
         <hr class="classlistseparator"></hr>
-        <ClientItem clientname="Samsons"></ClientItem>
-        <ClientItem clientname="DAV School"></ClientItem>
-        <ClientItem clientname="Lakshya Coaching Centre"></ClientItem>
-        <ClientItem clientname="Aggarsain School"></ClientItem>
-        <ClientItem clientname="Wisdom School"></ClientItem>
+        {listOfClients.map((value, index) => {
+            return <ClientItem clientname={value.clientName} clientindex={index}></ClientItem>
+        })}
     </div>
 }
 
 function ClientItem(props) {
-    return <div class="clientitem">
+    const setClientIndex = useSetRecoilState(selectedClientindexState);
+    const setEmailDetails = useSetRecoilState(clientemaildetails);
+    const setDocumentDetails = useSetRecoilState(clientdocdetails);
+    const listOfClients = useRecoilValue(clientListState);
+    const setCurrentClient = useSetRecoilState(currentClient);
+
+    function selectedClient(clientindex) {
+        setClientIndex(clientindex);
+        setCurrentClient(listOfClients[clientindex]);
+        fetch('http://localhost:3000/clientemail/' + listOfClients[clientindex].gstNumber).then((res) => {
+            res.json().then((data) => {
+                setEmailDetails(data);
+            })
+                .catch((err) => {
+                    setEmailDetails({ lastEmail: '', nextEmail: '' });
+                })
+        })
+        fetch('http://localhost:3000/clientdoc/' + listOfClients[clientindex].gstNumber).then((res) => {
+            res.json().then((data) => {
+                setDocumentDetails(data);
+                console.log(data);
+            })
+                .catch((err) => {
+                    setDocumentDetails({ lastdocdate: '', doclocation: '' });
+                })
+        })
+    }
+
+    return <div onClick={() => selectedClient(props.clientindex)} class="clientitem">
         <text>{props.clientname}</text>
         <img src='src/assets/correct.png'></img>
     </div>
 }
+
+const clientListState = atom({
+    key: 'clientList',
+    default: []
+});
+
+const selectedClientindexState = atom({
+    key: 'selectedClientindex',
+    default: 0
+});
+
+const clientemaildetails = atom({
+    key: 'clientemaildetails',
+    default: {
+        lastEmail: '',
+        nextEmail: ''
+    }
+});
+
+const clientdocdetails = atom({
+    key: 'docdetails',
+    default: { lastdocdate: '', doclocation: '' }
+});
+
+const currentClient = atom({
+    key: 'currentclientdetails',
+    default: {
+        clientName: '',
+        clientEmail: '',
+        clientNumber: '',
+        gstUsername: '',
+        gstNumber: '',
+        gstPassword: '',
+        isActive: false
+    }
+})
 
 export default HomePage;
