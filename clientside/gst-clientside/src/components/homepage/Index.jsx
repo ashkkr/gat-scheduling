@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { RecoilRoot, atom, selector, useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
 import './index.css';
+import Spinner from 'react-bootstrap/Spinner';
+import '../../../node_modules/bootstrap/dist/css/bootstrap.min.css'
 
 function fetchClientDetails() {
     const setClientList = useSetRecoilState(clientListState);
@@ -21,12 +23,10 @@ function handleChange(e, currClientVal, setFunc) {
 }
 
 function HomePage() {
-    return <RecoilRoot>
-        <div class="clientspace">
-            <ClientList></ClientList>
-            <ClientDetails></ClientDetails>
-        </div>
-    </RecoilRoot>
+    return <div class="clientspace">
+        <ClientList></ClientList>
+        <ClientDetails></ClientDetails>
+    </div>
 }
 
 function ClientDetails() {
@@ -238,8 +238,10 @@ function ClientItem(props) {
     const setDocumentDetails = useSetRecoilState(clientdocdetails);
     const listOfClients = useRecoilValue(clientListState);
     const setCurrentClient = useSetRecoilState(currentClient);
+    const [loading, setLoading] = useState(false);
 
     function selectedClient(clientindex) {
+        setLoading(true);
         setClientIndex(clientindex);
         setCurrentClient(listOfClients[clientindex]);
         fetch('http://localhost:3000/clientemail/' + listOfClients[clientindex].gstNumber).then((res) => {
@@ -248,6 +250,9 @@ function ClientItem(props) {
             })
                 .catch((err) => {
                     setEmailDetails({ lastEmail: '', nextEmail: '' });
+                })
+                .finally(() => {
+                    setLoading(false);
                 })
         })
         fetch('http://localhost:3000/clientdoc/' + listOfClients[clientindex].gstNumber).then((res) => {
@@ -261,10 +266,15 @@ function ClientItem(props) {
         })
     }
 
-    return <div onClick={() => selectedClient(props.clientindex)} class="clientitem">
-        <text>{props.clientname}</text>
-        <img src='src/assets/correct.png'></img>
-    </div>
+    if (!loading) {
+        return <div onClick={() => selectedClient(props.clientindex)} class="clientitem">
+            <text>{props.clientname}</text>
+            <img src='src/assets/correct.png'></img>
+        </div>
+    }
+    else {
+        return <Spinner animation="border"></Spinner>
+    }
 }
 
 const clientListState = atom({

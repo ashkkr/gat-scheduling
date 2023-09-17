@@ -3,13 +3,18 @@ import './App.css'
 import HomePage, { ClientEditables } from './components/homepage/Index'
 import AddClient from './components/addclient'
 import { Link, Outlet } from 'react-router-dom'
+import { RecoilRoot } from 'recoil'
+import Spinner from 'react-bootstrap/Spinner'
+import '../node_modules/bootstrap/dist/css/bootstrap.min.css'
 
 function App() {
   return (
-    <div>
-      <ClientNavBar></ClientNavBar>
-      <Outlet></Outlet>
-    </div>
+    <RecoilRoot>
+      <div>
+        <ClientNavBar></ClientNavBar>
+        <Outlet></Outlet>
+      </div>
+    </RecoilRoot>
   )
 }
 
