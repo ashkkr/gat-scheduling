@@ -23,14 +23,16 @@ function handleChange(e, currClientVal, setFunc) {
 }
 
 function HomePage() {
+    fetchClientDetails();
+    const loadingVal = useRecoilValue(loadingState);
     return <div class="clientspace">
         <ClientList></ClientList>
-        <ClientDetails></ClientDetails>
+        <span>{loadingVal}</span>
+        {(loadingVal ? <Spinner animation='border'></Spinner> : <ClientDetails></ClientDetails>)}
     </div>
 }
 
 function ClientDetails() {
-    fetchClientDetails();
     return <div class="clientdetails">
         <ClientEditables></ClientEditables>
         <GSTDetails></GSTDetails>
@@ -238,12 +240,12 @@ function ClientItem(props) {
     const setDocumentDetails = useSetRecoilState(clientdocdetails);
     const listOfClients = useRecoilValue(clientListState);
     const setCurrentClient = useSetRecoilState(currentClient);
-    const [loading, setLoading] = useState(false);
+    const setLoadingState = useSetRecoilState(loadingState);
 
     function selectedClient(clientindex) {
-        setLoading(true);
         setClientIndex(clientindex);
         setCurrentClient(listOfClients[clientindex]);
+        setLoadingState(true);
         fetch('http://localhost:3000/clientemail/' + listOfClients[clientindex].gstNumber).then((res) => {
             res.json().then((data) => {
                 setEmailDetails(data);
@@ -251,31 +253,33 @@ function ClientItem(props) {
                 .catch((err) => {
                     setEmailDetails({ lastEmail: '', nextEmail: '' });
                 })
-                .finally(() => {
-                    setLoading(false);
-                })
         })
-        fetch('http://localhost:3000/clientdoc/' + listOfClients[clientindex].gstNumber).then((res) => {
-            res.json().then((data) => {
-                setDocumentDetails(data);
-                console.log(data);
-            })
-                .catch((err) => {
-                    setDocumentDetails({ lastdocdate: '', doclocation: '' });
+            .finally(() => {
+                fetch('http://localhost:3000/clientdoc/' + listOfClients[clientindex].gstNumber).then((res) => {
+                    res.json().then((data) => {
+                        setDocumentDetails(data);
+                        console.log(data);
+                    })
+                        .catch((err) => {
+                            setDocumentDetails({ lastdocdate: '', doclocation: '' });
+                        });
                 })
-        })
+                    .finally(() => {
+                        setLoadingState(false);
+                    })
+            });
     }
 
-    if (!loading) {
-        return <div onClick={() => selectedClient(props.clientindex)} class="clientitem">
-            <text>{props.clientname}</text>
-            <img src='src/assets/correct.png'></img>
-        </div>
-    }
-    else {
-        return <Spinner animation="border"></Spinner>
-    }
+    return <div onClick={() => selectedClient(props.clientindex)} class="clientitem">
+        <text>{props.clientname}</text>
+        <img src='src/assets/correct.png'></img>
+    </div>
 }
+
+const loadingState = atom({
+    key: 'isLoading',
+    default: false
+});
 
 const clientListState = atom({
     key: 'clientList',
