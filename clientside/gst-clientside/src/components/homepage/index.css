@@ -104,7 +104,7 @@
     padding-top: 2px;
 }
 
-.clientlist>div {
+.clientlist div {
     box-sizing: border-box;
     margin: 0px 0px 6px 13px;
     border: solid;
@@ -119,9 +119,16 @@
 .clientlist text {
     padding: 20px;
     width: 70%;
+    text-decoration: none;
 }
 
 .clientlist img {
     width: 17px;
     height: 17px;
+}
+
+.spinnerpos {
+    position: relative;
+    left: 38vw;
+    top: 10vh;
 }

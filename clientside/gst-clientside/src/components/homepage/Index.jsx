@@ -3,16 +3,19 @@ import { RecoilRoot, atom, selector, useRecoilState, useRecoilValue, useSetRecoi
 import './index.css';
 import Spinner from 'react-bootstrap/Spinner';
 import '../../../node_modules/bootstrap/dist/css/bootstrap.min.css'
+import { Link, useNavigate } from 'react-router-dom'
 
 function fetchClientDetails() {
     const setClientList = useSetRecoilState(clientListState);
-    const setCurrClient = useSetRecoilState(currentClient);
+    const [currClient, setCurrClient] = useRecoilState(currentClient);
 
     useEffect(() => {
         fetch("http://localhost:3000/clientlist").then((res) => {
             res.json().then((data) => {
                 setClientList(data);
-                setCurrClient(data[0]);
+                if (currClient.clientName == '') {
+                    setCurrClient(data[0]);
+                }
             })
         })
     }, []);
@@ -27,9 +30,10 @@ function HomePage() {
     const loadingVal = useRecoilValue(loadingState);
     return <div class="clientspace">
         <ClientList></ClientList>
-        <span>{loadingVal}</span>
-        {(loadingVal ? <Spinner animation='border'></Spinner> : <ClientDetails></ClientDetails>)}
-    </div>
+        {(loadingVal ? <span class="spinnerpos">
+            <Spinner animation='border'></Spinner>
+        </span> : <ClientDetails></ClientDetails>)}
+    </div >
 }
 
 function ClientDetails() {
@@ -217,6 +221,7 @@ function ClientBasicDetails() {
 
 export function ClientList() {
     const listOfClients = useRecoilValue(clientListState);
+    const [searchString, setSearchString] = useState('');
 
     if (listOfClients == undefined || listOfClients.length == 0) {
         return <div class="clientlist">
@@ -226,10 +231,16 @@ export function ClientList() {
     }
 
     return <div class="clientlist">
-        <input class="clientsearch" type="text" placeholder='Search for Client'></input>
+        <input class="clientsearch" type="text" placeholder='Search for Client' onChange={(e) => setSearchString(e.target.value)}></input>
         <hr class="classlistseparator"></hr>
-        {listOfClients.map((value, index) => {
-            return <ClientItem clientname={value.clientName} clientindex={index}></ClientItem>
+        {listOfClients.filter((value) => {
+            if (searchString == null || searchString == '') return true;
+            else {
+                if (value.clientName.toLowerCase().includes(searchString.toLowerCase())) return true;
+                else return false;
+            }
+        }).map((value) => {
+            return <ClientItem clientname={value.clientName} clientgst={value.gstNumber}></ClientItem>
         })}
     </div>
 }
@@ -241,12 +252,18 @@ function ClientItem(props) {
     const listOfClients = useRecoilValue(clientListState);
     const setCurrentClient = useSetRecoilState(currentClient);
     const setLoadingState = useSetRecoilState(loadingState);
+    const navigate = useNavigate();
 
-    function selectedClient(clientindex) {
-        setClientIndex(clientindex);
-        setCurrentClient(listOfClients[clientindex]);
+    function selectedClient(clientgst) {
+        navigate('/');
+        setClientIndex(listOfClients.findIndex((value) => {
+            return value.gstNumber == clientgst
+        }));
+        setCurrentClient(listOfClients.find((value) => {
+            return value.gstNumber == clientgst
+        }));
         setLoadingState(true);
-        fetch('http://localhost:3000/clientemail/' + listOfClients[clientindex].gstNumber).then((res) => {
+        fetch('http://localhost:3000/clientemail/' + clientgst).then((res) => {
             res.json().then((data) => {
                 setEmailDetails(data);
             })
@@ -255,7 +272,7 @@ function ClientItem(props) {
                 })
         })
             .finally(() => {
-                fetch('http://localhost:3000/clientdoc/' + listOfClients[clientindex].gstNumber).then((res) => {
+                fetch('http://localhost:3000/clientdoc/' + clientgst).then((res) => {
                     res.json().then((data) => {
                         setDocumentDetails(data);
                         console.log(data);
@@ -270,7 +287,7 @@ function ClientItem(props) {
             });
     }
 
-    return <div onClick={() => selectedClient(props.clientindex)} class="clientitem">
+    return <div onClick={() => selectedClient(props.clientgst)} class="clientitem">
         <text>{props.clientname}</text>
         <img src='src/assets/correct.png'></img>
     </div>
@@ -316,5 +333,10 @@ const currentClient = atom({
         isActive: false
     }
 })
+
+const searchString = atom({
+    key: 'StringToBeSearched',
+    default: ''
+});
 
 export default HomePage;
