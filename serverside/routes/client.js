@@ -1,7 +1,9 @@
 const express = require('express');
-const router = express.Router();
+const clientRoutes = express.Router();
 const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
 var clientid = 1;
+const SECRET_KEY = 'MY_SECRET_KEY';
 
 const ClientSchema = new mongoose.Schema({
     clientId: Number,
@@ -36,11 +38,25 @@ const ClientsModel = mongoose.model('clientmaster', ClientSchema);
 const EmailModel = mongoose.model('emailmaster', EmailSchema);
 const DocModel = mongoose.model('docmaster', DocumentSchema);
 
-router.get('/hello', (req, res) => {
+const authenticateJwt = async (req, res, next) => {
+    const tokenBody = req.headers.authorization;
+    if (tokenBody) {
+        const token = tokenBody.split(' ')[1];
+        jwt.verify(token, SECRET_KEY, (err, ans) => {
+            if (err) res.status(401).send({ message: "Unauthorized Access" });
+            else next();
+        });
+    }
+    else {
+        res.status(401).send({ message: "Authentication failed" });
+    }
+}
+
+clientRoutes.get('/hello', authenticateJwt, (req, res) => {
     res.send("hey this also works");
 });
 
-router.post('/client/new', async (req, res) => {
+clientRoutes.post('/client/new', authenticateJwt, async (req, res) => {
     var newClient = {
         clientId: generateClientId(),
         ...req.body,
@@ -54,12 +70,12 @@ router.post('/client/new', async (req, res) => {
     res.json(newClient);
 });
 
-router.get('/clientlist', async (req, res) => {
+clientRoutes.get('/clientlist', authenticateJwt, async (req, res) => {
     const listOfClients = await ClientsModel.find({});
     res.json(listOfClients);
 });
 
-router.get('/clientemail/:gst', async (req, res) => {
+clientRoutes.get('/clientemail/:gst', authenticateJwt, async (req, res) => {
     const clientDetails = await ClientsModel.findOne({ gstNumber: req.params.gst });
 
     try {
@@ -76,7 +92,7 @@ router.get('/clientemail/:gst', async (req, res) => {
     }
 });
 
-router.get('/clientdoc/:gst', async (req, res) => {
+clientRoutes.get('/clientdoc/:gst', authenticateJwt, async (req, res) => {
     const clientDetails = await ClientsModel.findOne({ gstNumber: req.params.gst });
 
     try {
@@ -94,7 +110,7 @@ router.get('/clientdoc/:gst', async (req, res) => {
     }
 });
 
-router.post('/clientemail/:gst', async (req, res) => {
+clientRoutes.post('/clientemail/:gst', authenticateJwt, async (req, res) => {
     const clientDetails = await ClientsModel.findOne({ gstNumber: req.params.gst });
     const clientEmailDetails = await EmailModel.findOne({ clientId: clientDetails.clientId });
 
@@ -118,7 +134,7 @@ router.post('/clientemail/:gst', async (req, res) => {
     }
 });
 
-router.put('/clientdetails/:gst', async (req, res) => {
+clientRoutes.put('/clientdetails/:gst', authenticateJwt, async (req, res) => {
     try {
         const newclientdetails = req.body;
         const returnClient = await ClientsModel.findOneAndUpdate({ gstNumber: req.params.gst }, newclientdetails, { new: true });
@@ -134,4 +150,6 @@ function generateClientId() {
     return clientid;
 }
 
-module.exports = router;
+module.exports = {
+    clientRoutes, authenticateJwt, SECRET_KEY
+}

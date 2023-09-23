@@ -5,6 +5,7 @@ import './index.css'
 import HomePage from './components/homepage/Index.jsx'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import AddClient from './components/addclient/index.jsx'
+import Login from './components/login/index.jsx'
 
 const router = createBrowserRouter([
   {
@@ -20,12 +21,16 @@ const router = createBrowserRouter([
         element: <AddClient></AddClient>
       }
     ]
+  },
+  {
+    path: '/login',
+    element: <Login></Login>
   }
-])
+]);
 
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <RouterProvider router={router}></RouterProvider>
-  </React.StrictMode>,
+  </React.StrictMode>
 )

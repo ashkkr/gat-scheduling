@@ -10,7 +10,10 @@ function fetchClientDetails() {
     const [currClient, setCurrClient] = useRecoilState(currentClient);
 
     useEffect(() => {
-        fetch("http://localhost:3000/clientlist").then((res) => {
+        fetch("http://localhost:3000/clientlist", {
+            method: "GET",
+            headers: getHeader()
+        }).then((res) => {
             res.json().then((data) => {
                 setClientList(data);
                 if (currClient.clientName == '') {
@@ -21,7 +24,7 @@ function fetchClientDetails() {
     }, []);
 }
 
-function handleChange(e, currClientVal, setFunc) {
+export function handleChange(e, currClientVal, setFunc) {
     setFunc({ ...currClientVal, [e.target.name]: e.target.value });
 }
 
@@ -53,7 +56,8 @@ export function ClientEditables() {
             method: 'PUT',
             body: JSON.stringify(currentClientstate),
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "Authoization": getHeader().authorization
             }
         }).then((res) => {
             res.json().then((data) => {
@@ -263,7 +267,10 @@ function ClientItem(props) {
             return value.gstNumber == clientgst
         }));
         setLoadingState(true);
-        fetch('http://localhost:3000/clientemail/' + clientgst).then((res) => {
+        fetch('http://localhost:3000/clientemail/' + clientgst, {
+            method: "GET",
+            headers: getHeader()
+        }).then((res) => {
             res.json().then((data) => {
                 setEmailDetails(data);
             })
@@ -272,7 +279,10 @@ function ClientItem(props) {
                 })
         })
             .finally(() => {
-                fetch('http://localhost:3000/clientdoc/' + clientgst).then((res) => {
+                fetch('http://localhost:3000/clientdoc/' + clientgst, {
+                    method: "GET",
+                    headers: getHeader()
+                }).then((res) => {
                     res.json().then((data) => {
                         setDocumentDetails(data);
                         console.log(data);
@@ -291,6 +301,13 @@ function ClientItem(props) {
         <text>{props.clientname}</text>
         <img src='src/assets/correct.png'></img>
     </div>
+}
+
+function getHeader() {
+    const token = sessionStorage.getItem('token');
+    return {
+        "authorization": token
+    }
 }
 
 const loadingState = atom({

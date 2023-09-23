@@ -1,0 +1,35 @@
+.login-parent {
+    display: flex;
+    flex-direction: column;
+    width: 30vw;
+    gap: 4vh;
+    background-color: rgb(244, 243, 243);
+    margin: auto;
+    margin-top: 20vh;
+}
+
+.input-div {
+    display: flex;
+    flex-direction: column;
+    width: 80%;
+    margin: auto;
+    gap: 2px;
+}
+
+.login-button {
+    margin: auto;
+    width: 60%;
+}
+
+div.input-div:first-child {
+    margin-top: 15px;
+}
+
+div.input-div:last-child {
+    margin-bottom: 15px;
+}
+
+.error-msg {
+    color: red;
+    margin: auto;
+}

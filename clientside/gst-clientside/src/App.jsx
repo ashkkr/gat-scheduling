@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import './App.css'
-import HomePage, { ClientEditables } from './components/homepage/Index'
+import HomePage, { ClientEditables } from './components/homepage/index.jsx'
 import AddClient from './components/addclient'
 import { Link, Outlet } from 'react-router-dom'
 import { RecoilRoot } from 'recoil'
@@ -27,7 +27,9 @@ function ClientNavBar() {
       <Link to={`newclient`}>
         <button >Add Client</button>
       </Link>
-      <button>Logout</button>
+      <Link to={`login`}>
+        <button onClick={() => (sessionStorage.removeItem('token'))}>Logout</button>
+      </Link>
     </div>
   </div>
 }
