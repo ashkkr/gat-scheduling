@@ -102,6 +102,7 @@
     background-color: aliceblue;
     width: 250px;
     padding-top: 2px;
+    overflow-y: scroll;
 }
 
 .clientlist div {
@@ -116,7 +117,7 @@
     align-items: center;
 }
 
-.clientlist text {
+.clientlist span {
     padding: 20px;
     width: 70%;
     text-decoration: none;
