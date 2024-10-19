@@ -58,7 +58,7 @@ clientRoutes.get('/hello', authenticateJwt, (req, res) => {
 
 clientRoutes.post('/client/new', authenticateJwt, async (req, res) => {
     var newClient = {
-        clientId: generateClientId(),
+        clientId: generateClientId(clientid),
         ...req.body,
         isActive: true,
         isDeleted: false
@@ -145,11 +145,12 @@ clientRoutes.put('/clientdetails/:gst', authenticateJwt, async (req, res) => {
     }
 });
 
-function generateClientId() {
-    clientid++;
-    return clientid;
+function generateClientId(oldClientId) {
+    oldClientId++;
+    return oldClientId;
 }
 
 module.exports = {
-    clientRoutes, authenticateJwt, SECRET_KEY
+    clientRoutes, authenticateJwt, SECRET_KEY, generateClientId
 }
+
